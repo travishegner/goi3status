@@ -12,3 +12,17 @@ type Module interface {
 	GetUpdateChan() chan []*Block
 	Stop()
 }
+
+// BaseModule contains the attributes common to all modules
+type BaseModule struct {
+	Update chan []*Block
+	Done   chan struct{}
+}
+
+// BaseModuleConfig contains the attributes common to all module configs
+type BaseModuleConfig struct {
+	Label          string
+	Refresh        int
+	Separator      bool
+	SeparatorWidth int
+}
