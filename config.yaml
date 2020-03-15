@@ -1,0 +1,16 @@
+version: 1
+modules:
+  - name: DateTime
+    config:
+      format: "2006-01-02"
+  - name: DateTime
+    config:
+      format: "15:04:05 MST"
+  - name: DateTime
+    config:
+      format: "15:04:05 MST"
+      timezone: UTC
+  - name: DateTime
+    config:
+      format: "15:04:05 MST"
+      timezone: Asia/Kolkata

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,17 +13,16 @@ import (
 )
 
 func main() {
-	conf := `
-version: 1
-modules:
-  - name: DateTime
-    config:
-      format: "15:04:05 MST"
-`
+	cf := flag.String("config", "config.yaml", "config file describing status layout")
+	flag.Parse()
+
+	conf, err := ioutil.ReadFile(*cf)
+	if err != nil {
+		log.Fatalf("error reading config file: %v", err.Error())
+	}
 
 	c := types.Config{}
-
-	err := yaml.Unmarshal([]byte(conf), &c)
+	err = yaml.Unmarshal(conf, &c)
 	if err != nil {
 		log.Fatalf("error unmarshalling config: %v", err)
 		os.Exit(1)
