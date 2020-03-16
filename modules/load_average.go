@@ -16,51 +16,41 @@ func init() {
 }
 
 type loadAverageConfig struct {
-	label   string
-	refresh time.Duration
+	*types.BaseModuleConfig
 }
 
 // LoadAverage is a module representing the machines load average
 type LoadAverage struct {
-	update chan []*types.Block
-	done   chan struct{}
+	*types.BaseModule
 	config *loadAverageConfig
 }
 
 func newLoadAverageConfig(mc types.ModuleConfig) *loadAverageConfig {
-	label, ok := mc["label"].(string)
-	if !ok {
-		label = ""
-	}
-
-	refresh, ok := mc["refresh"].(int)
-	if !ok {
-		refresh = 1000
-	}
+	bmc := types.NewBaseModuleConfig(mc)
 
 	return &loadAverageConfig{
-		label:   label,
-		refresh: time.Duration(refresh) * time.Millisecond,
+		BaseModuleConfig: bmc,
 	}
-
 }
 
 // NewLoadAverage returns the LoadAverage module
 func NewLoadAverage(mc types.ModuleConfig) types.Module {
 	config := newLoadAverageConfig(mc)
-	done := make(chan struct{})
-	update := make(chan []*types.Block)
-	la := &LoadAverage{update: update, done: done, config: config}
+	bm := types.NewBaseModule()
+	la := &LoadAverage{
+		BaseModule: bm,
+		config:     config,
+	}
 
-	ticker := time.NewTicker(la.config.refresh)
+	ticker := time.NewTicker(la.config.Refresh)
 
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-bm.Done:
 				return
 			case <-ticker.C:
-				update <- la.MakeBlocks()
+				bm.Update <- la.MakeBlocks()
 			}
 		}
 	}()
@@ -71,9 +61,9 @@ func NewLoadAverage(mc types.ModuleConfig) types.Module {
 // MakeBlocks returns the Block array for this module
 func (la *LoadAverage) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
-	if la.config.label != "" {
+	if la.config.Label != "" {
 		block := types.NewBlock()
-		block.FullText = la.config.label
+		block.FullText = la.config.Label
 		block.RemoveSeparator()
 		b = append(b, block)
 	}
@@ -113,10 +103,10 @@ func (la *LoadAverage) MakeBlocks() []*types.Block {
 
 // GetUpdateChan returns the channel down which new block arrays are sent
 func (la *LoadAverage) GetUpdateChan() chan []*types.Block {
-	return la.update
+	return la.Update
 }
 
 // Stop stops this module from polling and sending updated Block arrays
 func (la *LoadAverage) Stop() {
-	close(la.done)
+	close(la.Done)
 }

@@ -14,36 +14,26 @@ func init() {
 }
 
 type batteryConfig struct {
-	types.BaseModuleConfig
+	*types.BaseModuleConfig
 	Attribute string
 }
 
 // Battery is a module representing the any machine batteries
 type Battery struct {
-	types.BaseModule
+	*types.BaseModule
 	Config *batteryConfig
 }
 
 func newBatteryConfig(mc types.ModuleConfig) *batteryConfig {
-	label, ok := mc["label"].(string)
-	if !ok {
-		label = ""
-	}
-
-	refresh, ok := mc["refresh"].(int)
-	if !ok {
-		refresh = 60000
-	}
-
+	bmc := types.NewBaseModuleConfig(mc)
 	attribute, ok := mc["attribute"].(string)
 	if !ok {
 		attribute = "percent"
 	}
 
 	return &batteryConfig{
-		Label:     label,
-		Refresh:   time.Duration(refresh) * time.Millisecond,
-		Attribute: attribute,
+		BaseModuleConfig: bmc,
+		Attribute:        attribute,
 	}
 
 }
@@ -51,19 +41,21 @@ func newBatteryConfig(mc types.ModuleConfig) *batteryConfig {
 // NewBattery returns the Battery module
 func NewBattery(mc types.ModuleConfig) types.Module {
 	config := newBatteryConfig(mc)
-	done := make(chan struct{})
-	update := make(chan []*types.Block)
-	bat := &Battery{Update: update, Done: done, Config: config}
+	bm := types.NewBaseModule()
+	bat := &Battery{
+		BaseModule: bm,
+		Config:     config,
+	}
 
-	ticker := time.NewTicker(bat.Config.refresh)
+	ticker := time.NewTicker(bat.Config.Refresh)
 
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-bm.Done:
 				return
 			case <-ticker.C:
-				update <- bat.MakeBlocks()
+				bm.Update <- bat.MakeBlocks()
 			}
 		}
 	}()

@@ -17,27 +17,21 @@ func init() {
 
 // CPU is a module to collect cpu information
 type CPU struct {
-	update    chan []*types.Block
-	done      chan struct{}
+	*types.BaseModule
 	config    *cpuConfig
 	graphChar []string
 }
 
 type cpuConfig struct {
-	refresh     time.Duration
+	*types.BaseModuleConfig
 	monitorType string
 	average     bool
-	label       string
 	tempGreen   int64
 	tempRed     int64
 }
 
 func newCPUConfig(mc types.ModuleConfig) *cpuConfig {
-	refresh, ok := mc["refresh"].(int)
-	if !ok {
-		refresh = 500
-	}
-
+	bmc := types.NewBaseModuleConfig(mc)
 	mon, ok := mc["monitor"].(string)
 	if !ok {
 		mon = "graph"
@@ -46,11 +40,6 @@ func newCPUConfig(mc types.ModuleConfig) *cpuConfig {
 	avg, ok := mc["average"].(bool)
 	if !ok {
 		avg = false
-	}
-
-	label, ok := mc["label"].(string)
-	if !ok {
-		label = ""
 	}
 
 	tempGreen, ok := mc["temp_green"].(int)
@@ -64,12 +53,11 @@ func newCPUConfig(mc types.ModuleConfig) *cpuConfig {
 	}
 
 	return &cpuConfig{
-		refresh:     time.Duration(refresh) * time.Millisecond,
-		monitorType: mon,
-		average:     avg,
-		label:       label,
-		tempGreen:   int64(tempGreen),
-		tempRed:     int64(tempRed),
+		BaseModuleConfig: bmc,
+		monitorType:      mon,
+		average:          avg,
+		tempGreen:        int64(tempGreen),
+		tempRed:          int64(tempRed),
 	}
 }
 
@@ -87,24 +75,22 @@ func NewCPU(mc types.ModuleConfig) types.Module {
 	char[6] = "\u2587"
 	char[7] = "\u2588"
 
-	done := make(chan struct{})
-	update := make(chan []*types.Block)
+	bm := types.NewBaseModule()
 	cpuMod := &CPU{
-		update:    update,
-		done:      done,
-		config:    config,
-		graphChar: char,
+		BaseModule: bm,
+		config:     config,
+		graphChar:  char,
 	}
 
-	ticker := time.NewTicker(config.refresh)
+	ticker := time.NewTicker(config.Refresh)
 
 	go func() {
 		for {
 			select {
-			case <-done:
+			case <-bm.Done:
 				return
 			case <-ticker.C:
-				update <- cpuMod.MakeBlocks()
+				bm.Update <- cpuMod.MakeBlocks()
 			}
 		}
 	}()
@@ -115,9 +101,9 @@ func NewCPU(mc types.ModuleConfig) types.Module {
 // MakeBlocks returns the i3 blocks for this module
 func (c *CPU) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
-	if c.config.label != "" {
+	if c.config.Label != "" {
 		block := types.NewBlock()
-		block.FullText = c.config.label
+		block.FullText = c.config.Label
 		block.RemoveSeparator()
 		block.SeparatorBlockWidth = 3
 		b = append(b, block)
@@ -164,7 +150,7 @@ func (c *CPU) makeTempBlocks() []*types.Block {
 func (c *CPU) makeUtilBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 
-	cpus, err := cpu.Percent(c.config.refresh, !c.config.average)
+	cpus, err := cpu.Percent(c.config.Refresh, !c.config.average)
 	if err != nil {
 		log.Warnf("err getting cpu percentages: %v", err)
 	}
@@ -197,10 +183,10 @@ func (c *CPU) getUtilBlock(val float64, last bool) *types.Block {
 
 // GetUpdateChan returns the channel down which Block arrays are sent
 func (c *CPU) GetUpdateChan() chan []*types.Block {
-	return c.update
+	return c.Update
 }
 
 // Stop stops the module
 func (c *CPU) Stop() {
-	close(c.done)
+	close(c.Done)
 }
