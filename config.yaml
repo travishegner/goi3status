@@ -1,6 +1,6 @@
 version: 1
 modules:
-  - name: Battery
+  - name: Uptime
     config:
-      attribute: percent
-      refresh: 10000
+      format: default
+      refresh: 1000

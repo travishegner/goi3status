@@ -10,6 +10,30 @@
   version = "1.1.0"
 
 [[projects]]
+  branch = "master"
+  digest = "1:197859ec3399ab85b72e7de88d85fbfa29d75692ddcf9f8bb81af4c73c6c49f7"
+  name = "github.com/davidscholberg/go-durationfmt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "64843a2083d31a1c3b4adf5d1e3a7651eefdad56"
+
+[[projects]]
+  digest = "1:ffcd21c81dfcfe0f374b6e28326e4297dd3e30100759f46b370de365a9933e62"
+  name = "github.com/distatus/battery"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "aa540e5be8de3bd83449b7a099341109e9ac1153"
+  version = "v0.10.0"
+
+[[projects]]
+  digest = "1:6f9339c912bbdda81302633ad7e99a28dfa5a639c864061f1929510a9a64aa74"
+  name = "github.com/dustin/go-humanize"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:440028f55cb322d8cb5b9d5ebec298a00b7d74690a658fe6b1c0c0b44341bfae"
   name = "github.com/go-ole/go-ole"
   packages = [
@@ -29,12 +53,16 @@
   version = "v1.0.2"
 
 [[projects]]
-  digest = "1:5900e1bb714b1a53d3dbbc05edb6d5d3c5046ab4de06da7099cd04fd49333040"
+  digest = "1:9eeb51b9bf003f8dfd78ca6138ca58e85d68cb073ff9b397c206b4f4fb8882f7"
   name = "github.com/shirou/gopsutil"
   packages = [
     "cpu",
+    "host",
     "internal/common",
     "load",
+    "mem",
+    "net",
+    "process",
   ]
   pruneopts = "UT"
   revision = "a3b23c5ccf4fb7b33d319fcaad53d7777907f4e1"
@@ -67,12 +95,25 @@
   revision = "53403b58ad1b561927d19068c655246f2db79d48"
   version = "v2.2.8"
 
+[[projects]]
+  branch = "master"
+  digest = "1:bc88f8258129a6b4eaf52d8095b3f0bcf68e065aca273aaf6ee7d3c7e464c510"
+  name = "howett.net/plist"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "77e249a2e2ba6362794925035a31bea61b902a1e"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/davidscholberg/go-durationfmt",
+    "github.com/distatus/battery",
+    "github.com/dustin/go-humanize",
     "github.com/shirou/gopsutil/cpu",
+    "github.com/shirou/gopsutil/host",
     "github.com/shirou/gopsutil/load",
+    "github.com/shirou/gopsutil/mem",
     "github.com/sirupsen/logrus",
     "gopkg.in/yaml.v2",
   ]
