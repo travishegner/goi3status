@@ -27,6 +27,9 @@ func main() {
 		log.Fatalf("error unmarshalling config: %v", err)
 		os.Exit(1)
 	}
+	// This software supports version 1 of the i3bar protocol
+	// https://i3wm.org/docs/i3bar-protocol.html
+	c.Version = 1
 
 	done := make(chan struct{})
 	sig := make(chan os.Signal)

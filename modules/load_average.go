@@ -42,6 +42,7 @@ func NewLoadAverage(mc types.ModuleConfig) types.Module {
 		config:     config,
 	}
 
+	bm.Update <- la.MakeBlocks()
 	ticker := time.NewTicker(la.config.Refresh)
 
 	go func() {
@@ -62,9 +63,8 @@ func NewLoadAverage(mc types.ModuleConfig) types.Module {
 func (la *LoadAverage) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if la.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(la.config.BlockSeparatorWidth)
 		block.FullText = la.config.Label
-		block.RemoveSeparator()
 		b = append(b, block)
 	}
 
@@ -81,19 +81,20 @@ func (la *LoadAverage) MakeBlocks() []*types.Block {
 		return b
 	}
 
-	block := types.NewBlock()
+	block := types.NewBlock(la.config.BlockSeparatorWidth)
 	block.FullText = fmt.Sprintf("%01.02v", avg.Load1)
 	block.Color = GetColor(avg.Load1 / cores)
-	block.RemoveSeparator()
 	b = append(b, block)
 
-	block = types.NewBlock()
+	block = types.NewBlock(la.config.BlockSeparatorWidth)
 	block.FullText = fmt.Sprintf("%01.02v", avg.Load5)
 	block.Color = GetColor(avg.Load5 / cores)
-	block.RemoveSeparator()
 	b = append(b, block)
 
-	block = types.NewBlock()
+	block = types.NewBlock(la.config.FinalSeparatorWidth)
+	if la.config.FinalSeparator {
+		block.AddSeparator()
+	}
 	block.FullText = fmt.Sprintf("%01.02v", avg.Load15)
 	block.Color = GetColor(avg.Load15 / cores)
 	b = append(b, block)

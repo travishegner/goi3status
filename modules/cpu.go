@@ -82,6 +82,7 @@ func NewCPU(mc types.ModuleConfig) types.Module {
 		graphChar:  char,
 	}
 
+	bm.Update <- cpuMod.MakeBlocks()
 	ticker := time.NewTicker(config.Refresh)
 
 	go func() {
@@ -102,10 +103,8 @@ func NewCPU(mc types.ModuleConfig) types.Module {
 func (c *CPU) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if c.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(c.config.BlockSeparatorWidth)
 		block.FullText = c.config.Label
-		block.RemoveSeparator()
-		block.SeparatorBlockWidth = 3
 		b = append(b, block)
 	}
 
@@ -131,15 +130,18 @@ func (c *CPU) makeTempBlocks() []*types.Block {
 	for i, z := range zones {
 		i32, _ := strconv.Atoi(readLine(z + "/temp"))
 		temp := int64(i32) / 1000
-		block := types.NewBlock()
+		block := types.NewBlock(c.config.BlockSeparatorWidth)
 		block.FullText = fmt.Sprintf("%v\u2103", temp)
 		base := temp - c.config.tempGreen
 		if base < 0 {
 			base = 0
 		}
 		block.Color = GetColor(float64(base) / float64(c.config.tempRed-c.config.tempGreen))
-		if i != len(zones) {
-			block.RemoveSeparator()
+		if i == len(zones)-1 {
+			block.SeparatorBlockWidth = c.config.FinalSeparatorWidth
+			if c.config.FinalSeparator {
+				block.AddSeparator()
+			}
 		}
 		b = append(b, block)
 	}
@@ -156,14 +158,20 @@ func (c *CPU) makeUtilBlocks() []*types.Block {
 	}
 
 	for i, v := range cpus {
-		b = append(b, c.getUtilBlock(v, i == len(cpus)))
+		block := c.getUtilBlock(v)
+		if i == len(cpus)-1 {
+			block.SeparatorBlockWidth = c.config.FinalSeparatorWidth
+			if c.config.FinalSeparator {
+				block.AddSeparator()
+			}
+		}
+		b = append(b, block)
 	}
 	return b
 }
 
-func (c *CPU) getUtilBlock(val float64, last bool) *types.Block {
-	sepWidth := 3
-	block := types.NewBlock()
+func (c *CPU) getUtilBlock(val float64) *types.Block {
+	block := types.NewBlock(c.config.BlockSeparatorWidth)
 	switch c.config.monitorType {
 	case "graph":
 		block.FullText = fmt.Sprintf("%v", c.graphChar[int((val/100)*7)])
@@ -171,13 +179,9 @@ func (c *CPU) getUtilBlock(val float64, last bool) *types.Block {
 		block.FullText = fmt.Sprintf("%v", int(val))
 		block.MinWidth = "99"
 		block.Align = "right"
-		sepWidth = 6
 	}
 	block.Color = GetColor(val / 100)
-	if !last {
-		block.RemoveSeparator()
-		block.SeparatorBlockWidth = sepWidth
-	}
+
 	return block
 }
 

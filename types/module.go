@@ -23,10 +23,11 @@ type BaseModule struct {
 
 // BaseModuleConfig contains the attributes common to all module configs
 type BaseModuleConfig struct {
-	Label          string
-	Refresh        time.Duration
-	Separator      bool
-	SeparatorWidth int
+	Label               string
+	Refresh             time.Duration
+	FinalSeparator      bool
+	FinalSeparatorWidth int
+	BlockSeparatorWidth int
 }
 
 // NewBaseModuleConfig parses and returns a BaseModuleConfig
@@ -41,28 +42,34 @@ func NewBaseModuleConfig(mc ModuleConfig) *BaseModuleConfig {
 		refresh = 1000
 	}
 
-	separator, ok := mc["separator"].(bool)
+	fseparator, ok := mc["final_separator"].(bool)
 	if !ok {
-		separator = true
+		fseparator = true
 	}
 
-	sepWidth, ok := mc["separator_width"].(int)
+	fsepWidth, ok := mc["final_separator_width"].(int)
 	if !ok {
-		sepWidth = 25
+		fsepWidth = 0
+	}
+
+	bsepWidth, ok := mc["block_separator_width"].(int)
+	if !ok {
+		bsepWidth = 0
 	}
 
 	return &BaseModuleConfig{
-		Label:          label,
-		Refresh:        time.Duration(refresh) * time.Millisecond,
-		Separator:      separator,
-		SeparatorWidth: sepWidth,
+		Label:               label,
+		Refresh:             time.Duration(refresh) * time.Millisecond,
+		FinalSeparator:      fseparator,
+		FinalSeparatorWidth: fsepWidth,
+		BlockSeparatorWidth: bsepWidth,
 	}
 }
 
 // NewBaseModule creates a new BaseModule
 func NewBaseModule() *BaseModule {
 	done := make(chan struct{})
-	update := make(chan []*Block)
+	update := make(chan []*Block, 1)
 	return &BaseModule{
 		Update: update,
 		Done:   done,

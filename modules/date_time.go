@@ -55,6 +55,7 @@ func NewDateTime(mc types.ModuleConfig) types.Module {
 		config:     config,
 	}
 
+	bm.Update <- dt.MakeBlocks()
 	ticker := time.NewTicker(dt.config.Refresh)
 
 	go func() {
@@ -75,14 +76,16 @@ func NewDateTime(mc types.ModuleConfig) types.Module {
 func (dt *DateTime) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if dt.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(dt.config.BlockSeparatorWidth)
 		block.FullText = dt.config.Label
-		block.RemoveSeparator()
 		b = append(b, block)
 	}
 
 	t := time.Now().In(dt.config.location)
-	block := types.NewBlock()
+	block := types.NewBlock(dt.config.FinalSeparatorWidth)
+	if dt.config.FinalSeparator {
+		block.AddSeparator()
+	}
 	block.FullText = t.Format(dt.config.format)
 	b = append(b, block)
 

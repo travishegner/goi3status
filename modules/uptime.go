@@ -29,7 +29,7 @@ func newUptimeConfig(mc types.ModuleConfig) *uptimeConfig {
 
 	format, ok := mc["format"].(string)
 	if !ok {
-		format = "deafult"
+		format = "default"
 	}
 
 	return &uptimeConfig{
@@ -47,6 +47,7 @@ func NewUptime(mc types.ModuleConfig) types.Module {
 		config:     config,
 	}
 
+	bm.Update <- m.MakeBlocks()
 	ticker := time.NewTicker(m.config.Refresh)
 
 	go func() {
@@ -67,13 +68,15 @@ func NewUptime(mc types.ModuleConfig) types.Module {
 func (u *Uptime) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if u.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(u.config.BlockSeparatorWidth)
 		block.FullText = u.config.Label
-		block.RemoveSeparator()
 		b = append(b, block)
 	}
 
-	block := types.NewBlock()
+	block := types.NewBlock(u.config.FinalSeparatorWidth)
+	if u.config.FinalSeparator {
+		block.AddSeparator()
+	}
 
 	ut, err := host.Uptime()
 	if err != nil {

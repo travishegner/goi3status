@@ -23,9 +23,12 @@ type Block struct {
 }
 
 // NewBlock returns a new Block
-func NewBlock() *Block {
+func NewBlock(sepWidth int) *Block {
+	f := new(bool)
+	*f = false
 	return &Block{
-		SeparatorBlockWidth: 25,
+		Separator:           f,
+		SeparatorBlockWidth: sepWidth,
 	}
 }
 
@@ -33,7 +36,6 @@ func NewBlock() *Block {
 // (this is because the separator defaults to true)
 func (b *Block) AddSeparator() {
 	b.Separator = nil
-	b.SeparatorBlockWidth = 25
 }
 
 // RemoveSeparator sets the separator false
@@ -41,5 +43,4 @@ func (b *Block) RemoveSeparator() {
 	f := new(bool)
 	*f = false
 	b.Separator = f
-	b.SeparatorBlockWidth = 0
 }

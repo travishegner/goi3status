@@ -45,6 +45,7 @@ func NewShellCommand(mc types.ModuleConfig) types.Module {
 		config:     config,
 	}
 
+	bm.Update <- sc.MakeBlocks()
 	ticker := time.NewTicker(sc.config.Refresh)
 
 	go func() {
@@ -65,21 +66,26 @@ func NewShellCommand(mc types.ModuleConfig) types.Module {
 func (sc *ShellCommand) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if sc.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(sc.config.BlockSeparatorWidth)
 		block.FullText = sc.config.Label
-		block.RemoveSeparator()
 		b = append(b, block)
 	}
 
 	if sc.config.cmd != "" {
-		block := types.NewBlock()
-		output, err := exec.Command("/bin/bash", "-c", sc.config.cmd).Output()
+		block := types.NewBlock(sc.config.FinalSeparatorWidth)
+		if sc.config.FinalSeparator {
+			block.AddSeparator()
+		}
+
+		cmd := sc.config.cmd
+		output, err := exec.Command("/bin/bash", "-c", cmd).Output()
 		if err != nil {
 			block.FullText = err.Error()
 			return b
 		}
 
 		block.FullText = strings.TrimSpace(string(output))
+		b = append(b, block)
 	}
 
 	return b

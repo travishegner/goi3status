@@ -49,6 +49,7 @@ func NewMemory(mc types.ModuleConfig) types.Module {
 		config:     config,
 	}
 
+	bm.Update <- m.MakeBlocks()
 	ticker := time.NewTicker(m.config.Refresh)
 
 	go func() {
@@ -69,14 +70,16 @@ func NewMemory(mc types.ModuleConfig) types.Module {
 func (m *Memory) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
 	if m.config.Label != "" {
-		block := types.NewBlock()
+		block := types.NewBlock(m.config.BlockSeparatorWidth)
 		block.FullText = m.config.Label
-		block.RemoveSeparator()
 		b = append(b, block)
 	}
 
 	var err error
-	block := types.NewBlock()
+	block := types.NewBlock(m.config.FinalSeparatorWidth)
+	if m.config.FinalSeparator {
+		block.AddSeparator()
+	}
 
 	var swp *mem.SwapMemoryStat
 	if strings.Split(m.config.Attribute, "_")[0] == "swap" {

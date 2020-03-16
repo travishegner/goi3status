@@ -21,7 +21,7 @@ type batteryConfig struct {
 // Battery is a module representing the any machine batteries
 type Battery struct {
 	*types.BaseModule
-	Config *batteryConfig
+	config *batteryConfig
 }
 
 func newBatteryConfig(mc types.ModuleConfig) *batteryConfig {
@@ -44,10 +44,11 @@ func NewBattery(mc types.ModuleConfig) types.Module {
 	bm := types.NewBaseModule()
 	bat := &Battery{
 		BaseModule: bm,
-		Config:     config,
+		config:     config,
 	}
 
-	ticker := time.NewTicker(bat.Config.Refresh)
+	bm.Update <- bat.MakeBlocks()
+	ticker := time.NewTicker(bat.config.Refresh)
 
 	go func() {
 		for {
@@ -66,10 +67,9 @@ func NewBattery(mc types.ModuleConfig) types.Module {
 // MakeBlocks returns the Block array for this module
 func (bat *Battery) MakeBlocks() []*types.Block {
 	b := make([]*types.Block, 0)
-	if bat.Config.Label != "" {
-		block := types.NewBlock()
-		block.FullText = bat.Config.Label
-		block.RemoveSeparator()
+	if bat.config.Label != "" {
+		block := types.NewBlock(bat.config.BlockSeparatorWidth)
+		block.FullText = bat.config.Label
 		b = append(b, block)
 	}
 
@@ -82,7 +82,7 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 	for i, tb := range batteries {
 		text := ""
 		color := ""
-		switch bat.Config.Attribute {
+		switch bat.config.Attribute {
 		case "percent":
 			text = fmt.Sprintf("%v", int((tb.Current/tb.Full)*100))
 			color = GetColor(tb.Current / tb.Full)
@@ -90,13 +90,14 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 			text = tb.State.String()
 		}
 
-		block := types.NewBlock()
+		block := types.NewBlock(bat.config.BlockSeparatorWidth)
 		block.FullText = text
 		if color != "" {
 			block.Color = color
 		}
-		if i != len(batteries) {
-			block.RemoveSeparator()
+		block.SeparatorBlockWidth = bat.config.FinalSeparatorWidth
+		if i == len(batteries) && bat.config.FinalSeparator {
+			block.AddSeparator()
 		}
 
 		b = append(b, block)
