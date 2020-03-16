@@ -1,5 +1,32 @@
 modules:
   - name: Uptime
     config:
-      format: default
+      label: "up:"
+      final_separator_width: 25
+  - name: LoadAverage
+    config:
+      refresh: 2000
+      final_separator_width: 25
+  - name: CPU
+    config:
+      monitor: "graph"
       refresh: 1000
+      final_separator_width: 25
+      block_separator_width: 3
+  - name: CPU
+    config:
+      monitor: "temp"
+      refresh: 2000
+      final_separator_width: 25
+  - name: Memory
+    config:
+      attribute: "ram_used"
+      refresh: 2000
+      final_separator: false
+  - name: Memory
+    config:
+      attribute: "ram_used_percent"
+      refresh: 2000
+  - name: DateTime
+    config:
+      format: "2006-01-02 15:04:05 MST"

@@ -42,13 +42,13 @@ func newUptimeConfig(mc types.ModuleConfig) *uptimeConfig {
 func NewUptime(mc types.ModuleConfig) types.Module {
 	config := newUptimeConfig(mc)
 	bm := types.NewBaseModule()
-	m := &Uptime{
+	u := &Uptime{
 		BaseModule: bm,
 		config:     config,
 	}
 
-	bm.Update <- m.MakeBlocks()
-	ticker := time.NewTicker(m.config.Refresh)
+	bm.Update <- u.MakeBlocks()
+	ticker := time.NewTicker(u.config.Refresh)
 
 	go func() {
 		for {
@@ -56,12 +56,12 @@ func NewUptime(mc types.ModuleConfig) types.Module {
 			case <-bm.Done:
 				return
 			case <-ticker.C:
-				bm.Update <- m.MakeBlocks()
+				bm.Update <- u.MakeBlocks()
 			}
 		}
 	}()
 
-	return m
+	return u
 }
 
 // MakeBlocks returns the Block array for this module
