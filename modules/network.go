@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/shirou/gopsutil/net"
 	log "github.com/sirupsen/logrus"
 	"github.com/travishegner/goi3status/types"
@@ -17,6 +16,9 @@ func init() {
 type networkConfig struct {
 	*types.BaseModuleConfig
 	Interface string
+	Attribute string
+	DownSpeed int
+	UpSpeed   int
 }
 
 // Network is a module representing the named interface
@@ -34,9 +36,27 @@ func newNetworkConfig(mc types.ModuleConfig) *networkConfig {
 		iface = "all"
 	}
 
+	attribute, ok := mc["attribute"].(string)
+	if !ok {
+		attribute = "down"
+	}
+
+	dnspd, ok := mc["down_speed"].(int)
+	if !ok {
+		dnspd = 1000
+	}
+
+	upspd, ok := mc["up_speed"].(int)
+	if !ok {
+		upspd = 1000
+	}
+
 	return &networkConfig{
 		BaseModuleConfig: bmc,
 		Interface:        iface,
+		Attribute:        attribute,
+		DownSpeed:        dnspd,
+		UpSpeed:          upspd,
 	}
 
 }
@@ -91,12 +111,29 @@ func (n *Network) MakeBlocks() []*types.Block {
 		if !pernic || s.Name == n.config.Interface {
 			block := types.NewBlock(n.config.BlockSeparatorWidth)
 
-			upDiff := humanize.IBytes(s.BytesSent - n.lastUpBytes)
-			dnDiff := humanize.IBytes(s.BytesRecv - n.lastDownBytes)
+			switch n.config.Attribute {
+			case "down":
+				br := s.BytesRecv
+				spd := (br - n.lastDownBytes) * 8 / 1000000
+				if n.lastDownBytes != 0 {
+					block.FullText = fmt.Sprintf("%v\u2193", spd)
+					block.Color = GetColor(float64(spd) / float64(n.config.DownSpeed))
+				}
+				n.lastDownBytes = br
 
-			block.FullText = fmt.Sprintf("%s up - %s dn", upDiff, dnDiff)
+			case "up":
+				bs := s.BytesSent
+				spd := (bs - n.lastUpBytes) * 8 / 1000000
+				if n.lastUpBytes != 0 {
+					block.FullText = fmt.Sprintf("%v\u2191", spd)
+					block.Color = GetColor(float64(spd) / float64(n.config.UpSpeed))
+				}
+				n.lastUpBytes = bs
+			}
 
 			b = append(b, block)
+
+			break
 		}
 	}
 
