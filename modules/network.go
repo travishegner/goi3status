@@ -24,9 +24,9 @@ type networkConfig struct {
 // Network is a module representing the named interface
 type Network struct {
 	*types.BaseModule
-	config        *networkConfig
-	lastUpBytes   uint64
-	lastDownBytes uint64
+	config       *networkConfig
+	lastRead     uint64
+	lastReadTime time.Time
 }
 
 func newNetworkConfig(mc types.ModuleConfig) *networkConfig {
@@ -43,12 +43,12 @@ func newNetworkConfig(mc types.ModuleConfig) *networkConfig {
 
 	dnspd, ok := mc["down_speed"].(int)
 	if !ok {
-		dnspd = 1000
+		dnspd = 1000000000
 	}
 
 	upspd, ok := mc["up_speed"].(int)
 	if !ok {
-		upspd = 1000
+		upspd = 1000000000
 	}
 
 	return &networkConfig{
@@ -111,25 +111,40 @@ func (n *Network) MakeBlocks() []*types.Block {
 		if !pernic || s.Name == n.config.Interface {
 			block := types.NewBlock(n.config.BlockSeparatorWidth)
 
+			bytes := uint64(0)
+			arrow := ""
+			maxSpd := int(0)
+			now := time.Now()
 			switch n.config.Attribute {
 			case "down":
-				br := s.BytesRecv
-				spd := (br - n.lastDownBytes) * 8 / 1000000
-				if n.lastDownBytes != 0 {
-					block.FullText = fmt.Sprintf("%v\u2193", spd)
-					block.Color = GetColor(float64(spd) / float64(n.config.DownSpeed))
-				}
-				n.lastDownBytes = br
-
+				bytes = s.BytesRecv
+				arrow = "\u2193"
+				maxSpd = n.config.DownSpeed
 			case "up":
-				bs := s.BytesSent
-				spd := (bs - n.lastUpBytes) * 8 / 1000000
-				if n.lastUpBytes != 0 {
-					block.FullText = fmt.Sprintf("%v\u2191", spd)
-					block.Color = GetColor(float64(spd) / float64(n.config.UpSpeed))
-				}
-				n.lastUpBytes = bs
+				bytes = s.BytesSent
+				arrow = "\u2191"
+				maxSpd = n.config.UpSpeed
 			}
+
+			bits := (bytes - n.lastRead) * 8
+			diff := now.Sub(n.lastReadTime).Seconds()
+			rawspd := float64(bits) / diff
+			spd := rawspd / 1000000
+			units := []string{"m", "g", "t"}
+			unit := 0
+			for {
+				if spd < 1000 {
+					break
+				}
+				unit++
+				spd = spd / float64(1000)
+			}
+			if n.lastRead != 0 {
+				block.FullText = fmt.Sprintf("%2.1f%s%s", spd, units[unit], arrow)
+				block.Color = GetColor(float64(rawspd) / float64(maxSpd))
+			}
+			n.lastRead = bytes
+			n.lastReadTime = now
 
 			b = append(b, block)
 
