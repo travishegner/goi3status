@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/shirou/gopsutil/net"
 	log "github.com/sirupsen/logrus"
 	"github.com/travishegner/goi3status/types"
@@ -17,14 +16,17 @@ func init() {
 type networkConfig struct {
 	*types.BaseModuleConfig
 	Interface string
+	Attribute string
+	DownSpeed int
+	UpSpeed   int
 }
 
 // Network is a module representing the named interface
 type Network struct {
 	*types.BaseModule
-	config        *networkConfig
-	lastUpBytes   uint64
-	lastDownBytes uint64
+	config       *networkConfig
+	lastRead     uint64
+	lastReadTime time.Time
 }
 
 func newNetworkConfig(mc types.ModuleConfig) *networkConfig {
@@ -34,9 +36,27 @@ func newNetworkConfig(mc types.ModuleConfig) *networkConfig {
 		iface = "all"
 	}
 
+	attribute, ok := mc["attribute"].(string)
+	if !ok {
+		attribute = "down"
+	}
+
+	dnspd, ok := mc["down_speed"].(int)
+	if !ok {
+		dnspd = 1000000000
+	}
+
+	upspd, ok := mc["up_speed"].(int)
+	if !ok {
+		upspd = 1000000000
+	}
+
 	return &networkConfig{
 		BaseModuleConfig: bmc,
 		Interface:        iface,
+		Attribute:        attribute,
+		DownSpeed:        dnspd,
+		UpSpeed:          upspd,
 	}
 
 }
@@ -91,12 +111,44 @@ func (n *Network) MakeBlocks() []*types.Block {
 		if !pernic || s.Name == n.config.Interface {
 			block := types.NewBlock(n.config.BlockSeparatorWidth)
 
-			upDiff := humanize.IBytes(s.BytesSent - n.lastUpBytes)
-			dnDiff := humanize.IBytes(s.BytesRecv - n.lastDownBytes)
+			bytes := uint64(0)
+			arrow := ""
+			maxSpd := int(0)
+			now := time.Now()
+			switch n.config.Attribute {
+			case "down":
+				bytes = s.BytesRecv
+				arrow = "\u2193"
+				maxSpd = n.config.DownSpeed
+			case "up":
+				bytes = s.BytesSent
+				arrow = "\u2191"
+				maxSpd = n.config.UpSpeed
+			}
 
-			block.FullText = fmt.Sprintf("%s up - %s dn", upDiff, dnDiff)
+			bits := (bytes - n.lastRead) * 8
+			diff := now.Sub(n.lastReadTime).Seconds()
+			rawspd := float64(bits) / diff
+			spd := rawspd / 1000000
+			units := []string{"m", "g", "t"}
+			unit := 0
+			for {
+				if spd < 1000 {
+					break
+				}
+				unit++
+				spd = spd / float64(1000)
+			}
+			if n.lastRead != 0 {
+				block.FullText = fmt.Sprintf("%2.1f%s%s", spd, units[unit], arrow)
+				block.Color = GetColor(float64(rawspd) / float64(maxSpd))
+			}
+			n.lastRead = bytes
+			n.lastReadTime = now
 
 			b = append(b, block)
+
+			break
 		}
 	}
 
