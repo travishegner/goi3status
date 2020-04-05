@@ -85,7 +85,7 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 		switch bat.config.Attribute {
 		case "percent":
 			text = fmt.Sprintf("%v", int((tb.Current/tb.Full)*100))
-			color = GetColor(tb.Current / tb.Full)
+			color = GetColor(1.0 - (tb.Current / tb.Full))
 		case "state":
 			text = tb.State.String()
 		}
