@@ -1,5 +1,5 @@
 modules:
-    - name: Uptime
+  - name: Uptime
     config:
       label: "up:"
       final_separator_width: 25
