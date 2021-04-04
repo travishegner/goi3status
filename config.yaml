@@ -33,3 +33,6 @@ modules:
   - name: Network
     config:
       label: "download:"
+  - name: Battery
+    config:
+      label: "battery:"

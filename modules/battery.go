@@ -75,11 +75,23 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 
 	batteries, err := battery.GetAll()
 	if err != nil {
-		log.Errorf("failed to get batteries: %v", err.Error())
-		return b
+		if fe, ok := err.(battery.ErrFatal); ok {
+			log.Errorf("fatal error getting batteries: %v", fe.Error())
+			return b
+		}
 	}
 
+	goodBats := make([]*battery.Battery, 0)
 	for i, tb := range batteries {
+		if es, ok := err.(battery.Errors); ok {
+			if es[i] != nil {
+				continue
+			}
+		}
+		goodBats = append(goodBats, tb)
+	}
+
+	for i, tb := range goodBats {
 		text := ""
 		color := ""
 		switch bat.config.Attribute {
