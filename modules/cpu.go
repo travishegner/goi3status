@@ -127,7 +127,7 @@ func (c *CPU) makeTempBlocks() []*types.Block {
 		return b
 	}
 
-	for i, z := range zones {
+	for _, z := range zones {
 		tpe := readLine(z + "/type")
 		if tpe != "x86_pkg_temp" {
 			continue
@@ -141,13 +141,15 @@ func (c *CPU) makeTempBlocks() []*types.Block {
 			base = 0
 		}
 		block.Color = GetColor(float64(base) / float64(c.config.tempRed-c.config.tempGreen))
-		if i == len(zones)-1 {
-			block.SeparatorBlockWidth = c.config.FinalSeparatorWidth
-			if c.config.FinalSeparator {
-				block.AddSeparator()
-			}
-		}
 		b = append(b, block)
+	}
+
+	if len(b) > 0 {
+		block := b[len(b)-1]
+		block.SeparatorBlockWidth = c.config.FinalSeparatorWidth
+		if c.config.FinalSeparator {
+			block.AddSeparator()
+		}
 	}
 
 	return b
