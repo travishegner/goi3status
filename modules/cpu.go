@@ -128,6 +128,10 @@ func (c *CPU) makeTempBlocks() []*types.Block {
 	}
 
 	for i, z := range zones {
+		tpe := readLine(z + "/type")
+		if tpe != "x86_pkg_temp" {
+			continue
+		}
 		i32, _ := strconv.Atoi(readLine(z + "/temp"))
 		temp := int64(i32) / 1000
 		block := types.NewBlock(c.config.BlockSeparatorWidth)
