@@ -99,7 +99,15 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 			text = fmt.Sprintf("%v", int((tb.Current/tb.Full)*100))
 			color = GetColor(1.0 - (tb.Current / tb.Full))
 		case "state":
-			text = tb.State.String()
+			switch tb.State.String() {
+			case "Charging":
+				text = "🔌"
+			case "Discharging":
+				text = "🔋"
+				if int((tb.Current/tb.Full)*100) < 25 {
+					text = "🪫"
+				}
+			}
 		}
 
 		block := types.NewBlock(bat.config.BlockSeparatorWidth)
