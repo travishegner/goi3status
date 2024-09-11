@@ -100,13 +100,13 @@ func (bat *Battery) MakeBlocks() []*types.Block {
 			color = GetColor(1.0 - (tb.Current / tb.Full))
 		case "state":
 			switch tb.State.String() {
-			case "Charging":
-				text = "🔌"
 			case "Discharging":
 				text = "🔋"
 				if int((tb.Current/tb.Full)*100) < 25 {
 					text = "🪫"
 				}
+			default:
+				text = "🔌"
 			}
 		}
 
